@@ -138,7 +138,7 @@ ggplot(df_long, aes(x = date_of_census, y = Count, color = Group)) +
 ```
 **Story:** This multiline plot reveals that the **family population** has grown at a much faster rate than the single adult population since **2023.** This directly aligns with my personal observations of families with children on the trains.
 
-####Detailed Family Composition
+#### Detailed Family Composition
 This graph tracks the specific breakdown of people in family shelters (Adults vs. Children):
 ```{r}
 #| message: false
@@ -210,27 +210,51 @@ Story: Children are the fastest-growing demographic in the NYC shelter system co
 
 ### Question 3: Does the shelter population peak during winter months? 
 
-####  **Seasonality and the Code Blue effect** 
-This graph investigates whether the people I see sleeping on trains are successfully transitioned into shelters during extreme cold. So, it evaluates the city's emergency winter response**(Code Blue).** If the population spikes significantly every January, it shows how weather-related public health policies drive DHS operations.
+####  **Seasonality** 
+This graph investigates whether the shelter population is higher during the winter season. By grouping the census into seasons, we can evaluate if the population spikes significantly during winter (Dec - Feb) and compare the overall distribution across all years:
 ```{r}
 #| message: false
 #| warning: false
 
 library(lubridate)
-df_monthly <- df |>
-  mutate(Month = month(date_of_census, label = TRUE))
 
-ggplot(df_monthly, aes(x = Month, y = total_individuals_in_shelter)) +
-  geom_boxplot(fill = "#FF69B4", color ="#8B1C62", alpha = 0.7) +
+df_seasonal <- df |>
+  mutate(Month_num = month(date_of_census),
+         Season = case_when(
+           Month_num %in% c(12, 1, 2) ~ "Winter",
+            Month_num %in% c(3, 4, 5) ~ "Spring",
+            Month_num %in% c(6, 7, 8) ~ "Summer",
+            Month_num %in% c(9, 10, 11) ~ "Fall"),
+         
+         Season = fct_relevel(Season, "Winter", "Spring", "Summer", "Fall"))
+
+ggplot(df_seasonal, aes(x = Season, y = total_individuals_in_shelter)) +
+  
+geom_boxplot(fill = "#FFB6C1" , color ="#C71585", alpha = 0.5, show.legend = FALSE, outlier.alpha = 0.2) +
+  
+   stat_summary(fun = median, geom = "segment", 
+                aes(x = as.numeric(Season) - 0.4, 
+                   xend = as.numeric(Season) + 0.4, 
+                   yend = after_stat(y), color = Season), 
+               size = 2.5, lineend = "round", show.legend = FALSE) +
+  
+  
+  scale_color_manual(values = c("Winter" ="#1E90FF",
+                               "Spring" = "#32CD32",
+                               "Summer"="#FFD700",
+                               "Fall" = "#FF8C00")) +
+
+scale_x_discrete(labels = c ("Winter\n(Dec- Feb)", "Spring\n(Mar-May)", "Summer\n(June-Aug)", "Fall\n(Sep-Nov)")) + 
+  
   labs(
-    title = "Monthly Shelter Census Distribution",
-    subtitle = "Checking for seasonal patterns across years",
-    y = "Total Individuals") +
+    title = "Shelter Census Distribution by Season(201-2026)",
+    x = "Season",
+    y = "Total Individuals in Shelter") +
    theme_minimal()
 ```
-**Story:** By using boxplots to look for seasonal patterns, we see that the overall growth trend is so powerful that it has largely erased traditional seasonality. While winter months typically see spikes, the medians for every month are now significantly higher than in previous years.
+**Story:** By using boxplots to look for seasonal patterns, we see that Winter (Dec-Feb) remains the peak occupancy period for the shelter system as expected. Interestingly, Fall (Sep-Nov) shows a higher median than Spring and Summer;  this likely reflects the pre-winter surge where dropping temperatures in October and November force people to seek indoor safety before the first frost.
 
-
+the overall growth trend is so powerful that it has largely erased traditional seasonality. While winter months typically see spikes, the medians for every month are now significantly higher than in previous years.
 
 
 #### Snow days : January 2026 and February 2026
