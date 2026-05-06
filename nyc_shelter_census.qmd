@@ -1,14 +1,14 @@
-# NYC Department of Homeless Services Daily Shelter Census Analysis
+# NYC Department of Homeless Services Shelter Census (2021-2026)
 
 Perpetua Senatus
 
 ## Introduction
-Homelessness remains one of the most pressing social and administrative challenges facing New York City, impacting thousands of individuals and families daily. My interest in this topic stems from my daily commute; as someone who takes the train to come to campus, I am frequently confronted with the human reality of this crisis. I often see people sleeping on the trains and encounter families with children asking for help. These experiences have left me constantly questioning why these individuals are not provided a safe place to stay for their well-being, are the shelters simply full, or are there other barriers to entry?. To better understand these questions, I chose to study the **NYC Department of Homeless Services(DHS) Daily Report** because it provides a transparent, high-frequency look at the scale of the city's shelter system and the specific demographics it serves. This project aims to perform detective work through exploratory data analysis to uncover trends in shelter residency. Specifically, I am interested in studying how the total population has fluctuated over the last few years, whether there are seasonal patterns in census counts, and which subgroups are most responsible for shifts in the overall population.
+Homelessness remains one of the most pressing social and administrative challenges facing New York City, impacting thousands of individuals and families daily. My interest in this topic stems from my daily commute; as someone who takes the train to come to campus, I am frequently confronted with the human reality of this crisis. I often see people sleeping on the trains and encounter families with children asking for help. These experiences have left me constantly questioning why these individuals are not provided a safe place to stay for their well-being, are the shelters simply full, or are there other barriers to entry?. To better understand these questions, I chose to study the ***NYC Department of Homeless Services (DHS) Daily Report*** because it provides a transparent, high-frequency look at the scale of the city's shelter system and the specific demographics it serves. This project aims to perform detective work through exploratory data analysis to uncover trends in shelter residency. Specifically, I am interested in studying how the total population has fluctuated over the last few years, whether there are seasonal patterns in census counts, and which subgroups are most responsible for shifts in the overall population.
 
 ## Data
 
 ### Description
-The data is provided by the **New York City Department of Homeless Services(DHS)** and represents an official daily census of families and individuals residing within the city's shelter system. The dataset is **updated daily** on the NYC Open Data portal. As of the latest records used in this analysis, the dataset contains **13 columns** and approximately 1**888 rows,** with each row representing one Date of Census. The key variables include the **Total Individuals in Shelter** (sum of all adults and children in the system) **and Demographic Breakdowns** (Single Adult Men/Women and Families with Children).
+The data is provided by the **New York City Department of Homeless Services(DHS)** and represents an official daily census of families and individuals residing within the city's shelter system. The dataset is **updated daily** on the NYC Open Data portal. As of the latest records used in this analysis, the dataset contains **13 columns** and over 1**800 rows,** with each row representing one Date of Census from 2021 to 2026. The key variables include the **Total Individuals in Shelter** (sum of all adults and children in the system) **and Demographic Breakdowns** (Single Adult Men/Women and Families with Children).
 
 **Dataset Link:** [DHS Daily Report- NYC Open Data](https://data.cityofnewyork.us/Social-Services/DHS-Daily-Report/k46n-sa2m/about_data)[ ](https://data.cityofnewyork.us/Social-Services/DHS-Daily-Report/k46n-sa2m/about_data)
 
@@ -54,7 +54,7 @@ vis_miss(df) +
   coord_flip() 
 ```
 
-**Graph 2:** Checking each variable one by one further confirms that every key metric has **zero missing values.** We can trust that the totals are not being skewed by one group being under-reported:
+***Graph 2:*** Checking each variable one by one further confirms that every key metric has **zero missing values.** We can trust that the totals are not being skewed by one group being under-reported:
 ```{r}
 #| message: false
 #| warning: false
@@ -68,10 +68,10 @@ gg_miss_var(df) +
 
 ## Results
 
-### Question 1: How has the total NYC shelter population evolved between  2021? Does the growth trajectory suggest a system reaching its capacity?
+### Question 1: How has the total NYC shelter population evolved between 2021 and 2026? Does the growth trajectory suggest a system reaching its capacity?
 
 #### The Impact of Economic Policy and Housing Costs
-This graph tracks the effectiveness of 'Right to Shelter' laws and the impact of rising NYC rent prices. A steady increase suggests that housing affordability policies may not be keeping pace with demand:
+This graph tracks the effectiveness of ***'Right to Shelter'*** laws and the impact of rising NYC rent prices. A steady increase suggests that housing affordability policies may not be keeping pace with demand:
 ```{r}
 #| warning: false
 #| message: false
@@ -88,8 +88,7 @@ ggplot(df, aes(x = date_of_census , y = total_individuals_in_shelter))+
 ```
 **Story:** After a period of relative stability in 2021, there is a massive surge starting in late 2022 that continues into 2026, with the population nearly doubling \~ from **45,000 to over 80,000** individuals. This rapid growth suggests that the pace of people entering the system significantly exceeds the city's ability to transition them into permanent housing.
 
-**Ridgeline Distribution by Year**
-
+####Ridgeline Distribution by Year
 This graph tracks the distribution of the daily census by year. We can see the center of gravity of the shelter system moving toward higher numbers as the crisis evolved:
 
 ```{r}
@@ -111,13 +110,18 @@ df |>
 
 **Story:** This ridgeline plot reveals that in 2021, the system consistently stayed around 45000 people. By 2024 and 2025, the peaks have flattened and migrated significantly to the right, showing that the high population has become the new normal. Basically, the density curves shifting to the right show the system reaching new baselines.
 
-### Question 2: What is the ratio of single adults vs. families with children over time? **How has the composition of the shelter system shifted over time?**
 
-**Demographic Shifts: Families with Children vs. Single Adults**
+According to this article , 2023 
+
+### Question 2: What is the ratio of single adults vs. families with children over time? How has the composition of the shelter system shifted over time?
+
+####Demographic Shifts: Families with Children vs. Single Adults
 This graph tracks
 ```{r}
 #| message: false
 #| warning: false
+
+
 df_long <- df |>
   select(date_of_census, total_single_adults_in_shelter, total_individuals_in_families_with_children_in_shelter_) |>
   rename("Single Adults" = total_single_adults_in_shelter,
@@ -134,11 +138,12 @@ ggplot(df_long, aes(x = date_of_census, y = Count, color = Group)) +
 ```
 **Story:** This multiline plot reveals that the **family population** has grown at a much faster rate than the single adult population since **2023.** This directly aligns with my personal observations of families with children on the trains.
 
-**Detailed Family Composition**
+####Detailed Family Composition
 This graph tracks the specific breakdown of people in family shelters (Adults vs. Children):
 ```{r}
 #| message: false
 #| warning: false
+
 df_2025 <- df |>
   filter(year(date_of_census) == 2025) |>
   select(date_of_census, adults_in_families_with_children_in_shelter, children_in_families_with_children_in_shelter) |>
@@ -158,26 +163,65 @@ ggplot(df_2025, aes(x = date_of_census, y = Count, fill = Subgroup)) +
 **Finding:** This stacked area chart shows that
 
 
+
+#### Percentage Growth by Demographic (Men , Women, Children)
+This graph reveals which demographic groups are experiencing the most explosive rate of increase:
 ```{r}
+#| message: false
+#| warning: false
+
+library(tidyverse)
+library(lubridate)
+
+df_indexed <- df |>
+  arrange(date_of_census) |>
+  select(date_of_census,
+         single_adult_men_in_shelter,
+         single_adult_women_in_shelter,
+         total_children_in_shelter) |>
+  
+  mutate(
+    Men_Index = (single_adult_men_in_shelter / first(single_adult_men_in_shelter)) * 100,
+    Women_Index = (single_adult_women_in_shelter / first(single_adult_women_in_shelter)) * 100,
+    Children_Index = (total_children_in_shelter / first( total_children_in_shelter)) * 100 ) |> 
+  
+  pivot_longer(cols = ends_with("Index"), names_to = "Demographic", values_to = "Growth") |>
+  
+  mutate(Demographic = fct_relevel(Demographic,"Children_Index", "Women_Index", "Men_Index"))
+
+ggplot(df_indexed, aes(x = date_of_census, y = Growth, color = Demographic)) +
+  geom_hline(yintercept = 100,linetype ="dashed", color="grey50")+
+  geom_line(size = 1) +
+  
+  scale_color_manual(values = c("Children_Index" = "#C71585",
+                                 "Women_Index"= "#FF1493",
+                                 "Men_Index"="#FFB6C1"), 
+                      labels = c("Children","Single Women","Single Men")) + 
+  
+  
+  labs(title = "Percentage Growth by Demographic", 
+  x = "Year",
+  y = "Indexed Growth") +
+  theme_minimal()
 
 ```
+Story: Children are the fastest-growing demographic in the NYC shelter system compared to single adult men or women. The Children line shows a much steeper trajectory, nearly doubling its 2021 baseline by 2024. This validates the hypothesis that the current crisis is fundamentally a family and youth crisis.
+
 
 ### Question 3: Does the shelter population peak during winter months? 
 
-#### **Seasonal Trends and Public Health** 
-
-####  **Seasonality and the code blue effect** 
-
+####  **Seasonality and the Code Blue effect** 
 This graph investigates whether the people I see sleeping on trains are successfully transitioned into shelters during extreme cold. So, it evaluates the city's emergency winter response**(Code Blue).** If the population spikes significantly every January, it shows how weather-related public health policies drive DHS operations.
 ```{r}
 #| message: false
 #| warning: false
+
 library(lubridate)
 df_monthly <- df |>
   mutate(Month = month(date_of_census, label = TRUE))
 
-ggplot(df_monthly, aes(x = Month, y = total_individuals_in_shelter, fill = Month)) +
-  geom_boxplot(show.legend = FALSE) +
+ggplot(df_monthly, aes(x = Month, y = total_individuals_in_shelter)) +
+  geom_boxplot(fill = "#FF69B4", color ="#8B1C62", alpha = 0.7) +
   labs(
     title = "Monthly Shelter Census Distribution",
     subtitle = "Checking for seasonal patterns across years",
@@ -186,7 +230,56 @@ ggplot(df_monthly, aes(x = Month, y = total_individuals_in_shelter, fill = Month
 ```
 **Story:** By using boxplots to look for seasonal patterns, we see that the overall growth trend is so powerful that it has largely erased traditional seasonality. While winter months typically see spikes, the medians for every month are now significantly higher than in previous years.
 
-** Short summary of the most revealing findings of my analysis:**
+
+
+
+#### Snow days : January 2026 and February 2026
+[January 25 - 26, 2026 Blizzard ](https://www.weather.gov/okx/20260125_26#:~:text=Moderate%20to%20heavy%20snowfall%20occurred,and%20evening%20on%20January%2025.)
+
+
+[February 22-23, 2026 Blizzard ](https://www.weather.gov/okx/20260222_23#:~:text=The%20National%20Weather%20Service%20in,%2C%20Southern%20New%20Haven%2C%20CT%2C)
+ 
+I vividly remember the major blizzards earlier this year when campus was closed and my classes moved online on **January 26** and **February 23** just to keep us safe. These **snow days** provide the perfect opportunity to evaluate the real-world effectiveness of the city's Code Blue emergency response. By isolating the census data for the windows of January 22-29 and February 19-26, we can visualize whether the shelter population spiked as homeless were pulled off the trains and streets into safety, or if the system remained flat due to capacity limits: 
+```{r}
+#| message: false
+#| warning: false
+#| 
+library(tidyverse)
+library(lubridate)
+
+  jan_blizzard <- df |>
+    filter(date_of_census >="2026-01-22" & date_of_census <= "2026-01-29") |>
+    mutate(Event ="Jan Blizzard")
+    
+  feb_blizzard <- df |>
+    filter(date_of_census >= "2026-02-19" & date_of_census <= "2026-02-26")|>
+      mutate(Event ="Feb Blizzard")
+     
+  blizzard_data <- bind_rows (jan_blizzard, feb_blizzard)
+  blizzard_data$Event <- factor(blizzard_data$Event, levels = c("Jan Blizzard", "Feb Blizzard"))
+
+ggplot(blizzard_data, aes(x = date_of_census, y= total_individuals_in_shelter, group = Event)) +
+  geom_line(color ="brown", size = 1) + 
+  geom_point(aes(color = date_of_census %in% as.Date(c("2026-01-25", "2026-01-26", "2026-02-22","2026-02-23"))), size = 4) +
+  
+  scale_color_manual( name = "Day Status",
+                      values = c("FALSE" = "#FFB8C1", "TRUE" = "#FF1493"),
+                      labels = c("FALSE" ="Regular Days", "TRUE" ="Blizzard Day")) +
+  facet_wrap(~Event, scales = "free_x") +
+  scale_y_continuous(labels = scales::comma) + 
+  labs (
+    title ="Code Blue Impact: Before, During, and After Peak Blizzard Days", 
+    x = "Census Date",
+    y ="Total Individuals in Shelter") +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        strip.text = element_text(face ="bold", size = 12),
+        axis.text.x = element_text(angle = 45, hjust =1))
+```
+**Story**: The Before, During, and After analysis of the early 2026 snow emergencies reveals the Code Blue response in action. In both January and February, the shelter census spikes exactly when blizzards hit, proving that emergency outreach successfully transitions people off the streets during life-threatening cold. The subsequent drop-offs shows the system returning to its baseline, confirming that DHS effectively scales capacity to meet immediate crisis needs.The lower February peaks likely illustrates a successful transition of individuals from January's emergency beds into more permanent housing placements as the winter progressed.
+
+
+**Short summary of the most revealing findings of my analysis:**
 
 Take extra care to clean up your graphs, ensuring that best practices for presentation are followed, as described in the audience-ready style section below.
 
