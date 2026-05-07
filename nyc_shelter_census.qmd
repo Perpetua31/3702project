@@ -66,9 +66,10 @@ gg_miss_var(df) +
 
 **Summary of patterns:** The missing value analysis reveals that the NYC DHS Shelter dataset exhibits a complete case structure, with zero missing values identified across 1000 observations analyzed. This is likely due to the data being an official daily census where each row is an aggregated total of the entire shelter system.
 
+
 ## Results
 
-### Question 1: How has the total NYC shelter population evolved between 2021 and 2026? Does the growth trajectory suggest a system reaching its capacity?
+### Question 1: How has the total NYC shelter population evolved between 2021 and 2026? 
 
 #### The Impact of Economic Policy and Housing Costs
 This graph tracks the effectiveness of ***'Right to Shelter'*** laws and the impact of rising NYC rent prices. A steady increase suggests that housing affordability policies may not be keeping pace with demand:
@@ -88,9 +89,8 @@ ggplot(df, aes(x = date_of_census , y = total_individuals_in_shelter))+
 ```
 **Story:** After a period of relative stability in 2021, there is a massive surge starting in late 2022 that continues into 2026, with the population nearly doubling \~ from **45,000 to over 80,000** individuals. This rapid growth suggests that the pace of people entering the system significantly exceeds the city's ability to transition them into permanent housing.
 
-####Ridgeline Distribution by Year
+#### Does the growth trajectory suggest a system reaching its capacity? /  Ridgeline Distribution by Year
 This graph tracks the distribution of the daily census by year. We can see the center of gravity of the shelter system moving toward higher numbers as the crisis evolved:
-
 ```{r}
 #| message: false
 #| warning: false
@@ -109,34 +109,9 @@ df |>
 ```
 
 **Story:** This ridgeline plot reveals that in 2021, the system consistently stayed around 45000 people. By 2024 and 2025, the peaks have flattened and migrated significantly to the right, showing that the high population has become the new normal. Basically, the density curves shifting to the right show the system reaching new baselines.
+According to this article , 2023 ....
 
-
-According to this article , 2023 
-
-### Question 2: What is the ratio of single adults vs. families with children over time? How has the composition of the shelter system shifted over time?
-
-####Demographic Shifts: Families with Children vs. Single Adults
-This graph tracks
-```{r}
-#| message: false
-#| warning: false
-
-
-df_long <- df |>
-  select(date_of_census, total_single_adults_in_shelter, total_individuals_in_families_with_children_in_shelter_) |>
-  rename("Single Adults" = total_single_adults_in_shelter,
-         "Families with Children" = total_individuals_in_families_with_children_in_shelter_) |>
-  pivot_longer(cols = -date_of_census, names_to = "Group", values_to = "Count")
-
-ggplot(df_long, aes(x = date_of_census, y = Count, color = Group)) +
-  geom_line(size = 1) +
-  labs(title = "Shelter Demographics: Single Adults vs. Families with Children",
-       x = "Year",
-       y = "Number of Individuals") +
-  scale_color_brewer(palette = "Set1") +
-  theme_minimal()
-```
-**Story:** This multiline plot reveals that the **family population** has grown at a much faster rate than the single adult population since **2023.** This directly aligns with my personal observations of families with children on the trains.
+### Question 2: How has the composition of the shelter system shifted over time(2021 - 2026)?
 
 #### Detailed Family Composition
 This graph analyses the total census population by household type so that we can understand the specific drivers of the city's housing crisis. By breaking the population into three distinct demographic groups(Single Adults, Families with Children and Adult-Only Families), we can see how the fundamental composition of the shelter system has transformed over the last five years:
@@ -182,8 +157,8 @@ ggplot(df_total_comp, aes(x = date_of_census, y = Count, fill = Group)) +
 
 
 
-#### Percentage Growth by Demographic (Men , Women, Children)
-This graph reveals which demographic groups are experiencing the most explosive rate of increase:
+#### The Velocity Change: Total Demographic Growth
+While the daily census tracks the current population, indexing the data allows us to measure the velocity of the crisis. By setting all demographic groups to a baseline of 100 at the strat of 2021, this visualization identifies which group have experienced the most explosive rates of growth over the five-year period: 
 ```{r}
 #| message: false
 #| warning: false
@@ -191,40 +166,89 @@ This graph reveals which demographic groups are experiencing the most explosive 
 library(tidyverse)
 library(lubridate)
 
-df_indexed <- df |>
+df_final_growth <- df |>
+  
   arrange(date_of_census) |>
-  select(date_of_census,
-         single_adult_men_in_shelter,
-         single_adult_women_in_shelter,
-         total_children_in_shelter) |>
   
   mutate(
     Men_Index = (single_adult_men_in_shelter / first(single_adult_men_in_shelter)) * 100,
     Women_Index = (single_adult_women_in_shelter / first(single_adult_women_in_shelter)) * 100,
-    Children_Index = (total_children_in_shelter / first( total_children_in_shelter)) * 100 ) |> 
-  
+    Children_Index = (total_children_in_shelter / first( total_children_in_shelter)) * 100,  
+    Parents_Index = (adults_in_families_with_children_in_shelter/first(adults_in_families_with_children_in_shelter)) * 100,
+AdultFamily_Index = (individuals_in_adult_families_in_shelter/ first(individuals_in_adult_families_in_shelter)) * 100) |>
+   
+  filter(date_of_census == max(date_of_census))|> 
   pivot_longer(cols = ends_with("Index"), names_to = "Demographic", values_to = "Growth") |>
-  
-  mutate(Demographic = fct_relevel(Demographic,"Children_Index", "Women_Index", "Men_Index"))
+  mutate(Demographic = fct_recode(Demographic,
+                                  "Children" = "Children_Index",
+                                   "Parents" = "Parents_Index", 
+                                  "Single Women" = "Women_Index", 
+                                  "Single Men" ="Men_Index",
+                                  "Adult Families" = "AdultFamily_Index"))
 
-ggplot(df_indexed, aes(x = date_of_census, y = Growth, color = Demographic)) +
+ggplot(df_final_growth, aes(x = fct_reorder(Demographic, Growth, .desc = TRUE),
+                            y = Growth, fill = Demographic)) +
+  
+  geom_col(alpha = 0.8, show.legend = FALSE) + 
+  
+  
   geom_hline(yintercept = 100,linetype ="dashed", color="grey50")+
-  geom_line(size = 1) +
+
+  scale_fill_manual(values = c("Parents" ="#8B1C62",
+                               "Children" = "#C71585",
+                               "Single Women"= "#FF1493",
+                                 "Single Men"="#FF69B4",
+                                "Adult Families" = "#FFB6C1"))+
   
-  scale_color_manual(values = c("Children_Index" = "#C71585",
-                                 "Women_Index"= "#FF1493",
-                                 "Men_Index"="#FFB6C1"), 
-                      labels = c("Children","Single Women","Single Men")) + 
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
   
-  
-  labs(title = "Percentage Growth by Demographic", 
-  x = "Year",
-  y = "Indexed Growth") +
-  theme_minimal()
+  labs(title = "Total Percentage Growth by Demographic Group (2021 - 2026)", 
+  x = "Demographic Group",
+  y = "Indexed Growth(100 Baseline)") +
+  theme_classic()
 
 ```
-Story: Children are the fastest-growing demographic in the NYC shelter system compared to single adult men or women. The Children line shows a much steeper trajectory, nearly doubling its 2021 baseline by 2024. This validates the hypothesis that the current crisis is fundamentally a family and youth crisis.
+Story: **Parents** and **Children**  have seen their numbers skyrocket, they nearly double compared to **Single Adults** and **Adult Families** who have grown at a significantly slower pace. This ranking validates the hypothesis that the current crisis is fundamentally a family and youth crisis, where the city's primary burden has shifted toward accommodating thousands of new family households rather than the other groups.
 
+
+
+#### The Individual Gender Divide
+While family residency has driven the overall surge in the shelter system, the population of single individuals remains a significant and distinct demographic. By isolating **Single Men** and **Single Women** into a faceted yearly view, we can analyze the gender gap withing the shelter system:
+```{r}
+#| message: false
+#| warning: false
+library(tidyverse)
+library(lubridate)
+
+df_gender <- df |>
+  select(date_of_census, 
+         single_adult_men_in_shelter,
+         single_adult_women_in_shelter)|>
+  
+  rename("Single Men" = single_adult_men_in_shelter,
+         "Single Women" = single_adult_women_in_shelter)|>
+  
+  pivot_longer(cols = -date_of_census, names_to = "Gender", values_to = "Count") |>
+  
+  mutate(Year = year(date_of_census))
+
+ggplot(df_gender, aes(x = date_of_census, y = Count, color = Gender)) +
+  geom_line(linewidth = 1.2) +
+  facet_wrap(~Year, scales ="free_x", nrow =1) +
+  
+  scale_color_manual(values = c("Single Men" = "#FFB6C1",
+                                "Single Women" = "#FF1493")) +
+    
+  labs(title = "The Single Adult Gender Gap",
+       x = "Timeline by Year",
+       y = "Total Individuals",
+       color = "Demographics") +
+  theme_minimal() +
+    theme(legend.position = "bottom",
+    strip.background = element_rect(fill = "grey95"),
+    axis.text.x = element_blank())
+```
+**Story:**  The faceted lines show that while **Single Men** consistently outnumber **Single Women** in the shelter system, noth groups follow nearly identical trajectories. The gap between the two lines remains relatively constant through the spikes of 2023 and into 2025. This suggests that the factors driving single individuals into the shelter system (such as low-income housing or unemployment) are affecting both genders simultaneously. 
 
 ### Question 3: Does the shelter population peak during winter months? 
 
@@ -332,7 +356,7 @@ Your project should contain 5-10 graphs. Quality is rewarded over quantity.
 
 Discuss: 
 main takeaways of your exploration,  --> 
-limitations, --> numbers only 
+limitations, --> numbers only , high frequency daily time series,  dataset aggregates adults withing family units meaning parents category include all mothers, fathers, and guardians in the system and I wanted to have a viz about single mothers and single fathers, children are attached to family units so I cannot really isolated them 
 future directions,  --> 
 lessons learned. --> code blue, spike in 2023, shelter capacity
 
