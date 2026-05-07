@@ -139,28 +139,46 @@ ggplot(df_long, aes(x = date_of_census, y = Count, color = Group)) +
 **Story:** This multiline plot reveals that the **family population** has grown at a much faster rate than the single adult population since **2023.** This directly aligns with my personal observations of families with children on the trains.
 
 #### Detailed Family Composition
-This graph tracks the specific breakdown of people in family shelters (Adults vs. Children):
+This graph analyses the total census population by household type so that we can understand the specific drivers of the city's housing crisis. By breaking the population into three distinct demographic groups(Single Adults, Families with Children and Adult-Only Families), we can see how the fundamental composition of the shelter system has transformed over the last five years:
 ```{r}
 #| message: false
 #| warning: false
 
-df_2025 <- df |>
-  filter(year(date_of_census) == 2025) |>
-  select(date_of_census, adults_in_families_with_children_in_shelter, children_in_families_with_children_in_shelter) |>
-  rename("Adults in Families" = adults_in_families_with_children_in_shelter,
-         "Children in Families" = children_in_families_with_children_in_shelter) |>
-  pivot_longer(cols = -date_of_census, names_to = "Subgroup", values_to = "Count")
+library(tidyverse)
+library(lubridate)
 
-ggplot(df_2025, aes(x = date_of_census, y = Count, fill = Subgroup)) +
-  geom_area(alpha = 0.8) +
-  labs(title = "Composition of Families in Shelters (2025)",
-       x = "Month",
-       y = "Number of Individuals") +
-  scale_fill_manual(values = c("steelblue", "orange")) +
-  theme_minimal()
+df_total_comp <- df |>
+  
+  select(date_of_census, 
+         total_single_adults_in_shelter, total_individuals_in_families_with_children_in_shelter_, individuals_in_adult_families_in_shelter) |>
+  
+  rename("Single Adults" = total_single_adults_in_shelter,
+         "Families with children" = total_individuals_in_families_with_children_in_shelter_,
+         "Adult-Only Families" = individuals_in_adult_families_in_shelter) |>
+  
+  pivot_longer(cols = -date_of_census, names_to = "Group", values_to = "Count")
+
+
+ggplot(df_total_comp, aes(x = date_of_census, y = Count, fill = Group)) +
+  geom_area(alpha = 0.85) +
+  scale_fill_manual(values = c(
+    "Single Adults" = "#FF1493",
+    "Families with children" = "#FFB6C1",
+    "Adult-Only Families" ="#8B1C62")) +
+    
+  
+  labs(title = "Evolution of NYC Shelter Residency by Household Type (2021-2026)",
+       x = "Year",
+       y = "Total Individuals", 
+  fill = "Demographic Group") +
+  theme_minimal() +
+  theme (
+    legend.position = "bottom",
+    panel.grid.minor = element_blank() 
+  )
 ```
 
-**Finding:** This stacked area chart shows that
+**Story** This stacked area chart reveals a dramatic shift in the face of NYC's shelter residency. In 2021 and early 2022, the system was relatively stable, with **Single Adults** and **Families with Children** making up similar portions of the total. However, in late 2022, **the Families with Children** began an unprecedented expansion, quickly becoming the largest group in the system and driving the total headcount above 80,000 individuals. Meanwhile, the **Adult-Only Families** represent the smallest and most stable demographic. This visualization proves the crisis has evolved from an individual issue into a massive humanitarian challenge for families, requiring entirely different resources than the city has historically provided. 
 
 
 
@@ -254,16 +272,13 @@ scale_x_discrete(labels = c ("Winter\n(Dec- Feb)", "Spring\n(Mar-May)", "Summer\
 ```
 **Story:** By using boxplots to look for seasonal patterns, we see that Winter (Dec-Feb) remains the peak occupancy period for the shelter system as expected. Interestingly, Fall (Sep-Nov) shows a higher median than Spring and Summer;  this likely reflects the pre-winter surge where dropping temperatures in October and November force people to seek indoor safety before the first frost.
 
-the overall growth trend is so powerful that it has largely erased traditional seasonality. While winter months typically see spikes, the medians for every month are now significantly higher than in previous years.
-
-
 #### Snow days : January 2026 and February 2026
 [January 25 - 26, 2026 Blizzard ](https://www.weather.gov/okx/20260125_26#:~:text=Moderate%20to%20heavy%20snowfall%20occurred,and%20evening%20on%20January%2025.)
 
 
 [February 22-23, 2026 Blizzard ](https://www.weather.gov/okx/20260222_23#:~:text=The%20National%20Weather%20Service%20in,%2C%20Southern%20New%20Haven%2C%20CT%2C)
  
-I vividly remember the major blizzards earlier this year when campus was closed and my classes moved online on **January 26** and **February 23** just to keep us safe. These **snow days** provide the perfect opportunity to evaluate the real-world effectiveness of the city's Code Blue emergency response. By isolating the census data for the windows of January 22-29 and February 19-26, we can visualize whether the shelter population spiked as homeless were pulled off the trains and streets into safety, or if the system remained flat due to capacity limits: 
+I vividly remember the major blizzards earlier this year when campus was closed and my classes moved online on **January 26** and **February 23** just to keep us safe. These **snow days** provide the perfect opportunity to evaluate the real-world effectiveness of the city's **Code Blue** emergency response. By isolating the census data for the windows of January 22-29 and February 19-26, we can visualize whether the shelter population spiked as homeless were pulled off the trains and streets into safety, or if the system remained flat due to capacity limits: 
 ```{r}
 #| message: false
 #| warning: false
@@ -288,11 +303,11 @@ ggplot(blizzard_data, aes(x = date_of_census, y= total_individuals_in_shelter, g
   
   scale_color_manual( name = "Day Status",
                       values = c("FALSE" = "#FFB8C1", "TRUE" = "#FF1493"),
-                      labels = c("FALSE" ="Regular Days", "TRUE" ="Blizzard Day")) +
+                      labels = c("FALSE" ="Regular Days", "TRUE" ="Blizzard Days")) +
   facet_wrap(~Event, scales = "free_x") +
   scale_y_continuous(labels = scales::comma) + 
   labs (
-    title ="Code Blue Impact: Before, During, and After Peak Blizzard Days", 
+    title ="Code Blue Impact: Before, During, and After Peak Blizzard Days (early 2026)", 
     x = "Census Date",
     y ="Total Individuals in Shelter") +
   theme_minimal() +
@@ -303,7 +318,9 @@ ggplot(blizzard_data, aes(x = date_of_census, y= total_individuals_in_shelter, g
 **Story**: The Before, During, and After analysis of the early 2026 snow emergencies reveals the Code Blue response in action. In both January and February, the shelter census spikes exactly when blizzards hit, proving that emergency outreach successfully transitions people off the streets during life-threatening cold. The subsequent drop-offs shows the system returning to its baseline, confirming that DHS effectively scales capacity to meet immediate crisis needs.The lower February peaks likely illustrates a successful transition of individuals from January's emergency beds into more permanent housing placements as the winter progressed.
 
 
-**Short summary of the most revealing findings of my analysis:**
+**Short summary of the most revealing findings of my analysis:** 
+
+
 
 Take extra care to clean up your graphs, ensuring that best practices for presentation are followed, as described in the audience-ready style section below.
 
@@ -312,6 +329,11 @@ Your project should contain 5-10 graphs. Quality is rewarded over quantity.
 
 ## Conclusion
 
-Discuss: main takeaways of your exploration, limitations, future directions, lessons learned.
+
+Discuss: 
+main takeaways of your exploration,  --> 
+limitations, --> numbers only 
+future directions,  --> 
+lessons learned. --> code blue, spike in 2023, shelter capacity
 
 (suggested length: one paragraph)
